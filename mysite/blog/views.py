@@ -1,8 +1,21 @@
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import get_object_or_404, render
 from .models import Post
+from django.views.generic import ListView
 # Create your views here.
 
+class PostListView(ListView):
+    """
+    Using class-based view will return 404 for pagination instead of Empty or NotInteger,
+    which is more easy to handle 
+    """
+    queryset= Post.published.all()
+    context_object_name = 'posts' # if not specify, it will be object_list
+    paginate_by = 3 # ListView comes with page_obj for pagination, don't have to import anything
+    template_name = 'blog/post/list.html'
+
+
+# Not in use
 def post_list(request):
     post_list = Post.published.all()
 # Pagination with 3 posts per page
