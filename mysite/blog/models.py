@@ -62,3 +62,4 @@ class Post(models.Model):
                 self.slug
             ]
         )
+        
