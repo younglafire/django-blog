@@ -2,8 +2,9 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.shortcuts import get_object_or_404, render
 from .models import Post
 from django.views.generic import ListView
-from .forms import EmailPostForm
+from .forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
+from django.views.decorators.http import require_POST
 # Create your views here.
 
 class PostListView(ListView):
@@ -48,10 +49,20 @@ def post_detail(request, year, month, day, post):
         publish__month=month,
         publish__day=day,
     )
+    # List of active comments for this post
+    comments = post.comments.filter(active=True)
+    # Form to comment
+    form = CommentForm()
+    
     return render(
         request,
         'blog/post/detail.html',
-        {'post': post}
+        {
+            'post': post,
+            'comments': comments,
+            'form': form,
+        }
+        
     )
       
 def post_share(request, post_id):
@@ -98,5 +109,32 @@ def post_share(request, post_id):
             'sent' : sent
         }
     )
+        
+@require_POST
+def post_comment(request,post_id):
+    post = get_object_or_404(
+        Post,
+        id = post_id,
+        status = Post.Status.PUBLISHED,
+    )
+    comment = None 
+    # A comment was posted by the form
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+    # Creat a comment object without saving it to the database
+        comment = form.save(commit=False)
+    # Assign the post to the comment
+        comment.post = post # Now we have the relationship
+        comment.save()
+    return render( # Display again if there are any form errors
+        request,
+        'blog/post/comment.html', 
+        {
+            'post':post, 
+            'form':form,
+            'comment': comment,
+        }
+    )
+
         
      
